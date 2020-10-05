@@ -10,6 +10,9 @@ use std::io;
 use std::io::Read;
 use std::time::Duration;
 
+mod text;
+use text::TextRenderer;
+
 #[derive(Deserialize)]
 struct Config {
     font: String,
@@ -60,6 +63,15 @@ fn main() {
         .expect("Failed to create canvas");
 
     let texture_creator = canvas.texture_creator();
+
+    let text_renderer = TextRenderer::new(
+        &ttf_ctx,
+        &texture_creator,
+        &config.font,
+        config.font_size,
+        config.window_width,
+    );
+
     let mut event_pump = ctx.event_pump().unwrap();
     'running: loop {
         for event in event_pump.poll_iter() {
@@ -71,6 +83,7 @@ fn main() {
 
         canvas.set_draw_color(Color::RGB(0, 0, 0));
         canvas.clear();
+        text_renderer.render(&mut canvas, "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Cras non diam quis dolor tempus rutrum id a eros. Vestibulum maximus aliquet molestie. Cras efficitur odio vel justo tincidunt sollicitudin. Ut at placerat metus, eget ultrices ligula. Vestibulum semper vitae nibh in interdum. Donec fringilla erat feugiat purus rutrum scelerisque. Aenean quis mauris nec odio ornare semper. Nunc tempor laoreet laoreet. Etiam mollis non lectus vel euismod. Vestibulum et sodales purus, scelerisque auctor ipsum. Sed nec metus mollis, facilisis nisi ut, mattis massa. Suspendisse congue ante justo, non facilisis neque pulvinar sed. Integer accumsan convallis nunc sed sagittis. Morbi a tincidunt enim. Mauris blandit tellus id nibh mattis porta sit amet eu urna.", 4, 4);
         canvas.present();
         ::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 60));
     }
