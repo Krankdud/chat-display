@@ -5,11 +5,14 @@ use sdl2::ttf::Font;
 use sdl2::ttf::Sdl2TtfContext;
 use std::path::Path;
 
+const LINE_OFFSET: i32 = 16;
+
 pub struct TextRenderer<'a, T> {
     font: Font<'a, 'a>,
     texture_creator: &'a TextureCreator<T>,
 
     text_width: i32,
+    lines: Vec<String>,
 }
 
 impl<'a, T> TextRenderer<'a, T> {
@@ -27,10 +30,11 @@ impl<'a, T> TextRenderer<'a, T> {
             font: font,
             texture_creator: texture_creator,
             text_width: (window_width - 4) as i32,
+            lines: vec![],
         }
     }
 
-    fn draw_text(&self, canvas: &mut WindowCanvas, string: &str, x: i32, y: i32, color: Color) {
+    fn render_text(&self, canvas: &mut WindowCanvas, string: &str, x: i32, y: i32, color: Color) {
         if string.len() == 0 {
             return;
         }
@@ -47,7 +51,7 @@ impl<'a, T> TextRenderer<'a, T> {
         canvas.copy(&texture, None, rect).unwrap();
     }
 
-    pub fn render(&self, canvas: &mut WindowCanvas, string: &str, x: i32, y: i32) {
+    fn render_line(&self, canvas: &mut WindowCanvas, string: &str, x: i32, y: i32) -> i32 {
         let (width, _height) = self.font.size_of(string).unwrap();
         if x + (width as i32) > self.text_width {
             let splits: Vec<&str> = string.split(' ').collect();
@@ -60,8 +64,8 @@ impl<'a, T> TextRenderer<'a, T> {
             for word in splits.iter() {
                 let (sw, _sh) = self.font.size_of(word).unwrap();
                 if x + ((len + sw) as i32) > self.text_width {
-                    self.draw_text(canvas, &line, x, y, Color::WHITE);
-                    y += self.font.height() - 16;
+                    self.render_text(canvas, &line, x, y, Color::WHITE);
+                    y += self.font.height() - LINE_OFFSET;
                     line.clear();
                     len = 0;
                 } else {
@@ -70,8 +74,21 @@ impl<'a, T> TextRenderer<'a, T> {
                     len += sw + space_width;
                 }
             }
+            return y + self.font.height() - LINE_OFFSET;
         } else {
-            self.draw_text(canvas, string, x, y, Color::WHITE);
+            self.render_text(canvas, string, x, y, Color::WHITE);
         }
+        return y + self.font.height() - LINE_OFFSET;
+    }
+
+    pub fn render(&self, canvas: &mut WindowCanvas, x: i32, y: i32) {
+        let mut y = y;
+        for line in self.lines.iter() {
+            y = self.render_line(canvas, line, x, y);
+        }
+    }
+
+    pub fn push_line(&mut self, string: &str) {
+        self.lines.push(String::from(string));
     }
 }

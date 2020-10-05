@@ -42,7 +42,7 @@ fn main() {
     let config = match load_config() {
         Ok(config) => config,
         Err(e) => {
-            println!("Error: {}", e);
+            println!("Couldn't read config: {}", e);
             default_config()
         }
     };
@@ -64,13 +64,18 @@ fn main() {
 
     let texture_creator = canvas.texture_creator();
 
-    let text_renderer = TextRenderer::new(
+    let mut text_renderer = TextRenderer::new(
         &ttf_ctx,
         &texture_creator,
         &config.font,
         config.font_size,
         config.window_width,
     );
+
+    text_renderer.push_line("Hello");
+    text_renderer.push_line("world!");
+    text_renderer
+        .push_line("This is a really long line so it will get wrapped at the edge of the screen");
 
     let mut event_pump = ctx.event_pump().unwrap();
     'running: loop {
@@ -83,7 +88,7 @@ fn main() {
 
         canvas.set_draw_color(Color::RGB(0, 0, 0));
         canvas.clear();
-        text_renderer.render(&mut canvas, "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Cras non diam quis dolor tempus rutrum id a eros. Vestibulum maximus aliquet molestie. Cras efficitur odio vel justo tincidunt sollicitudin. Ut at placerat metus, eget ultrices ligula. Vestibulum semper vitae nibh in interdum. Donec fringilla erat feugiat purus rutrum scelerisque. Aenean quis mauris nec odio ornare semper. Nunc tempor laoreet laoreet. Etiam mollis non lectus vel euismod. Vestibulum et sodales purus, scelerisque auctor ipsum. Sed nec metus mollis, facilisis nisi ut, mattis massa. Suspendisse congue ante justo, non facilisis neque pulvinar sed. Integer accumsan convallis nunc sed sagittis. Morbi a tincidunt enim. Mauris blandit tellus id nibh mattis porta sit amet eu urna.", 4, 4);
+        text_renderer.render(&mut canvas, 4, 4);
         canvas.present();
         ::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 60));
     }
