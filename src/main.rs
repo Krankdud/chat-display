@@ -2,19 +2,26 @@
 
 extern crate sdl2;
 
+use irc::client::prelude::*;
 use sdl2::event::Event;
 use sdl2::pixels::Color;
 use serde::Deserialize;
 use std::fs::File;
 use std::io;
 use std::io::Read;
+use std::sync::mpsc::channel;
+use std::thread;
 use std::time::Duration;
+
+mod twitch;
+use twitch::*;
 
 mod text;
 use text::TextRenderer;
 
 #[derive(Deserialize)]
 struct Config {
+    channel: String,
     font: String,
     font_size: u16,
     window_width: u32,
@@ -23,6 +30,7 @@ struct Config {
 
 fn default_config() -> Config {
     Config {
+        channel: String::from("#cantdrown"),
         font: String::from("Silver.ttf"),
         font_size: 36,
         window_width: 320,
@@ -72,10 +80,12 @@ fn main() {
         config.window_width,
     );
 
-    text_renderer.push_line("Hello");
-    text_renderer.push_line("world!");
-    text_renderer
-        .push_line("This is a really long line so it will get wrapped at the edge of the screen");
+    let (tx, rx) = channel::<TwitchCommand>();
+    let _child = thread::spawn(move || {
+        let mut runtime = tokio::runtime::Runtime::new().unwrap();
+        let future = connect_to_chat(&config.channel, tx);
+        runtime.block_on(future).unwrap();
+    });
 
     let mut event_pump = ctx.event_pump().unwrap();
     'running: loop {
@@ -84,6 +94,24 @@ fn main() {
                 Event::Quit { .. } => break 'running,
                 _ => {}
             }
+        }
+
+        let message = rx.try_recv();
+        match message {
+            Ok(message) => match message {
+                TwitchCommand::Message {
+                    id: _,
+                    username,
+                    message,
+                } => {
+                    let mut s = String::from(username);
+                    s += ": ";
+                    s += &message;
+                    text_renderer.push_line(&s);
+                }
+                _ => {}
+            },
+            _ => {}
         }
 
         canvas.set_draw_color(Color::RGB(0, 0, 0));
