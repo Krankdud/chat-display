@@ -1,4 +1,5 @@
 use futures::prelude::*;
+use hex::FromHex;
 use irc::client::prelude::*;
 use irc::proto::message::Tag;
 use rand::prelude::*;
@@ -15,6 +16,7 @@ pub enum TwitchCommand {
         id: String,
         username: String,
         message: String,
+        color: (u8, u8, u8),
     },
 }
 
@@ -55,13 +57,20 @@ fn parse_privmsg(message: &Message, text: &str) -> TwitchCommand {
         None => String::new(),
     };
     let mut id = String::new();
+    let mut color: Vec<u8> = vec![255, 255, 255];
 
     for tag in message.tags.as_ref().unwrap().iter() {
         let Tag(key, value) = tag;
-        if key == "display-name" && value.is_some() {
-            nickname = value.as_ref().unwrap().to_owned();
-        } else if key == "id" && value.is_some() {
-            id = value.as_ref().unwrap().to_owned();
+        if value.is_some() {
+            match key.as_str() {
+                "display-name" => nickname = value.as_ref().unwrap().to_owned(),
+                "id" => id = value.as_ref().unwrap().to_owned(),
+                "color" => {
+                    let hex = value.as_ref().unwrap()[1..].to_owned();
+                    color = Vec::from_hex(&hex).unwrap();
+                }
+                _ => {}
+            }
         }
     }
 
@@ -69,5 +78,6 @@ fn parse_privmsg(message: &Message, text: &str) -> TwitchCommand {
         id: id,
         username: nickname,
         message: text.to_owned(),
+        color: (color[0], color[1], color[2]),
     }
 }

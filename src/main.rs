@@ -2,7 +2,6 @@
 
 extern crate sdl2;
 
-use irc::client::prelude::*;
 use sdl2::event::Event;
 use sdl2::pixels::Color;
 use serde::Deserialize;
@@ -78,6 +77,8 @@ fn main() {
         &config.font,
         config.font_size,
         config.window_width,
+        config.window_height,
+        4,
     );
 
     let (tx, rx) = channel::<TwitchCommand>();
@@ -103,11 +104,12 @@ fn main() {
                     id: _,
                     username,
                     message,
+                    color,
                 } => {
                     let mut s = String::from(username);
                     s += ": ";
                     s += &message;
-                    text_renderer.push_line(&s);
+                    text_renderer.push_line(&s, &color);
                 }
                 _ => {}
             },
@@ -116,7 +118,7 @@ fn main() {
 
         canvas.set_draw_color(Color::RGB(0, 0, 0));
         canvas.clear();
-        text_renderer.render(&mut canvas, 4, 4);
+        text_renderer.render(&mut canvas);
         canvas.present();
         ::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 60));
     }
