@@ -66,8 +66,12 @@ fn parse_privmsg(message: &Message, text: &str) -> TwitchCommand {
                 "display-name" => nickname = value.as_ref().unwrap().to_owned(),
                 "id" => id = value.as_ref().unwrap().to_owned(),
                 "color" => {
-                    let hex = value.as_ref().unwrap()[1..].to_owned();
-                    color = Vec::from_hex(&hex).unwrap();
+                    let hex = value.as_ref().unwrap();
+                    // color can be an empty string
+                    if hex.len() > 0 {
+                        let hex = hex[1..].to_owned();
+                        color = Vec::from_hex(&hex).unwrap();
+                    }
                 }
                 _ => {}
             }

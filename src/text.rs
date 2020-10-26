@@ -97,13 +97,20 @@ impl<'a, T> TextRenderer<'a, T> {
             let start_y = y - (self.font.height() - LINE_OFFSET) * ((lines.len() as i32) - 1);
             let mut y = start_y;
             for l in lines.iter() {
-                self.render_text(canvas, &l, x, y, data.color);
+                self.render_text(canvas, &l, x, y, Color::WHITE);
                 y += self.font.height() - LINE_OFFSET;
             }
 
+            // Render colored name
+            self.render_text(canvas, &splits[0], x, start_y, data.color);
+
             return start_y - self.font.height() + LINE_OFFSET;
         } else {
-            self.render_text(canvas, string, x, y, data.color);
+            self.render_text(canvas, string, x, y, Color::WHITE);
+
+            // Render colored name
+            let splits: Vec<&str> = string.split(' ').collect();
+            self.render_text(canvas, &splits[0], x, y, data.color);
         }
         return y - self.font.height() + LINE_OFFSET;
     }
